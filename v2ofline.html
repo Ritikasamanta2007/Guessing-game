@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Guess The Number - Ultimate Multiplayer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono&display=swap" rel="stylesheet"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0a0a0f;
+  color: #e8e8f0;
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* BG grid */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(124,110,245,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,110,245,0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+  pointer-events: none;
+}
+
+/* Orbs */
+.orb {
+  position: fixed; border-radius: 50%;
+  filter: blur(90px); pointer-events: none;
+}
+.orb1 { width:380px; height:380px; background:rgba(124,110,245,0.09); top:-120px; left:-120px; }
+.orb2 { width:300px; height:300px; background:rgba(34,211,160,0.07); bottom:-90px; right:-90px; }
+.orb3 { width:260px; height:260px; background:rgba(251,113,133,0.06); top:50%; right:-80px; }
+
+/* ── FLOATING NAVIGATION BUTTONS ── */
+.floating-nav {
+  position: fixed;
+  right: 20px;
+  z-index: 100;
+  background: rgba(17, 17, 24, 0.8);
+  border: 1px solid #1e1e2e;
+  color: #55556a;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.floating-nav:hover {
+  border-color: #7c6ef5;
+  color: #7c6ef5;
+  background: rgba(124, 110, 245, 0.1);
+  transform: translateY(-2px);
+}
+.nav-home { top: 20px; }
+.nav-back { bottom: 20px; }
+
+/* WRAPPER */
+.wrap { position:relative; z-index:1; width:100%; max-width:520px; }
+
+/* HEADER */
+.header { text-align:center; margin-bottom:28px; }
+.badge-tag {
+  display:inline-block;
+  font-family:'Space Mono',monospace;
+  font-size:0.6rem; letter-spacing:0.3em; text-transform:uppercase;
+  color:#7c6ef5; border:1px solid rgba(124,110,245,0.35);
+  padding:5px 14px; border-radius:20px; margin-bottom:14px;
+}
+h1 { font-size:clamp(2.2rem,8vw,3.4rem); font-weight:800; line-height:1.05; letter-spacing:-0.02em; }
+h1 span { color:#7c6ef5; }
+.sub { margin-top:8px; font-size:0.78rem; color:#55556a; }
+
+/* CARD */
+.card {
+  background:#111118; border:1px solid #1e1e2e;
+  border-radius:18px; padding:28px; position:relative; overflow:hidden;
+}
+.card::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(124,110,245,0.5),transparent);
+}
+
+/* SCREENS */
+.screen { display:none; }
+.screen.active { display:block; }
+
+/* ── SHARED ── */
+.sec-title {
+  font-size:0.72rem; letter-spacing:0.25em; text-transform:uppercase;
+  color:#55556a; text-align:center; margin-bottom:18px;
+}
+
+/* ── MAIN MENU ── */
+.mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+.mode-btn {
+  background:transparent; border:2px solid #1e1e2e;
+  border-radius:16px; padding:24px 12px; cursor:pointer;
+  text-align:center; font-family:'Syne',sans-serif;
+  transition:border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  color:#e8e8f0; position:relative; overflow:hidden;
+}
+.mode-btn::before {
+  content:''; position:absolute; inset:0; opacity:0;
+  transition:opacity 0.2s;
+}
+.mode-btn.solo::before { background:radial-gradient(circle at 50% 0%, rgba(124,110,245,0.12), transparent 70%); }
+.mode-btn.multi::before { background:radial-gradient(circle at 50% 0%, rgba(251,113,133,0.12), transparent 70%); }
+.mode-btn:hover { transform:translateY(-3px); }
+.mode-btn:hover::before { opacity:1; }
+.mode-btn.solo:hover { border-color:#7c6ef5; box-shadow:0 0 22px rgba(124,110,245,0.25); }
+.mode-btn.multi:hover { border-color:#fb7185; box-shadow:0 0 22px rgba(251,113,133,0.25); }
+.mode-icon { font-size:2rem; display:block; margin-bottom:10px; }
+.mode-label { display:block; font-size:1rem; font-weight:800; margin-bottom:4px; }
+.mode-desc { display:block; font-size:0.62rem; color:#55556a; line-height:1.5; }
+.mode-tag {
+  display:inline-block; margin-top:8px;
+  font-family:'Space Mono',monospace; font-size:0.55rem;
+  padding:3px 8px; border-radius:20px; letter-spacing:0.1em;
+}
+.mode-btn.solo .mode-tag { background:rgba(124,110,245,0.15); color:#7c6ef5; }
+.mode-btn.multi .mode-tag { background:rgba(251,113,133,0.15); color:#fb7185; }
+
+.best-row { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.best-chip {
+  font-family:'Space Mono',monospace; font-size:0.58rem;
+  padding:5px 12px; border-radius:20px;
+  border:1px solid #1e1e2e; color:#55556a;
+}
+
+/* ── DIFFICULTY ── */
+.diff-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:24px; }
+.diff-btn {
+  background:transparent; border:2px solid #1e1e2e;
+  border-radius:14px; padding:18px 8px; cursor:pointer;
+  text-align:center; font-family:'Syne',sans-serif;
+  transition:border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  color:#e8e8f0;
+}
+.diff-btn:hover { transform:translateY(-3px); }
+.diff-icon { font-size:1.7rem; display:block; margin-bottom:8px; }
+.diff-name { display:block; font-size:0.82rem; font-weight:700; margin-bottom:4px; }
+.diff-range { display:block; font-family:'Space Mono',monospace; font-size:0.58rem; color:#55556a; }
+.diff-tries { display:block; font-size:0.6rem; color:#55556a; margin-top:2px; }
+
+/* Back btn */
+.back-btn {
+  background:transparent; border:none; color:#55556a;
+  font-family:'Space Mono',monospace; font-size:0.7rem;
+  cursor:pointer; padding:0; margin-bottom:18px;
+  display:flex; align-items:center; gap:6px;
+  transition:color 0.2s;
+}
+.back-btn:hover { color:#e8e8f0; }
+
+/* ── MP SETUP ── */
+.mp-setup-form { display:flex; flex-direction:column; gap:14px; margin-bottom:20px; }
+.field-label { font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:#55556a; margin-bottom:6px; display:block; }
+.text-input {
+  width:100%; background:#0a0a0f; border:2px solid #1e1e2e;
+  border-radius:10px; padding:11px 14px;
+  font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:600;
+  color:#e8e8f0; outline:none;
+  transition:border-color 0.2s, box-shadow 0.2s;
+}
+.text-input:focus { border-color:#fb7185; box-shadow:0 0 0 3px rgba(251,113,133,0.15); }
+
+.player-fields { display:flex; flex-direction:column; gap:8px; }
+.player-row { display:flex; gap:8px; align-items:center; }
+.player-row .text-input { flex:1; }
+.player-avatar {
+  width:38px; height:38px; border-radius:10px; border:2px solid #1e1e2e;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Space Mono',monospace; font-size:0.75rem; font-weight:700;
+  flex-shrink:0; transition:border-color 0.2s;
+}
+
+.rounds-row { display:flex; gap:8px; }
+.round-opt {
+  flex:1; background:transparent; border:2px solid #1e1e2e;
+  border-radius:10px; padding:10px 6px; cursor:pointer;
+  text-align:center; font-family:'Space Mono',monospace;
+  font-size:0.78rem; font-weight:700; color:#55556a;
+  transition:border-color 0.2s, color 0.2s, background 0.2s;
+}
+.round-opt.selected { border-color:#fb7185; color:#fb7185; background:rgba(251,113,133,0.08); }
+
+.btn-pri {
+  width:100%; background:#7c6ef5; border:none;
+  border-radius:10px; padding:13px; font-family:'Syne',sans-serif;
+  font-size:0.9rem; font-weight:700; color:#fff; cursor:pointer;
+  transition:background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.btn-pri:hover { background:#9585f8; transform:translateY(-2px); box-shadow:0 6px 20px rgba(124,110,245,0.35); }
+.btn-pri.pink { background:#fb7185; }
+.btn-pri.pink:hover { background:#fd9fab; box-shadow:0 6px 20px rgba(251,113,133,0.35); }
+
+.btn-sec {
+  flex:1; background:transparent; border:2px solid #1e1e2e;
+  border-radius:10px; padding:12px; font-family:'Syne',sans-serif;
+  font-size:0.85rem; font-weight:600; color:#e8e8f0; cursor:pointer;
+  transition:border-color 0.2s, color 0.2s;
+}
+.btn-sec:hover { border-color:#7c6ef5; color:#7c6ef5; }
+
+/* ── GAME ── */
+.game-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
+.level-badge {
+  font-size:0.68rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+  padding:5px 14px; border-radius:20px; border:1px solid;
+}
+.tries-info { font-family:'Space Mono',monospace; font-size:0.72rem; color:#55556a; }
+.tries-info strong { font-size:1rem; color:#e8e8f0; }
+
+.range-box {
+  background:#1e1e2e; border-radius:8px; padding:10px 16px;
+  display:flex; justify-content:space-between;
+  font-family:'Space Mono',monospace; font-size:0.7rem;
+  margin-bottom:18px;
+}
+.range-box span:first-child { color:#55556a; }
+.range-box span:last-child { color:#e8e8f0; font-weight:700; }
+
+.input-row { display:flex; gap:10px; margin-bottom:14px; }
+.num-input {
+  flex:1; background:#0a0a0f; border:2px solid #1e1e2e;
+  border-radius:10px; padding:13px 16px;
+  font-family:'Space Mono',monospace; font-size:1.2rem; font-weight:700;
+  color:#e8e8f0; text-align:center; outline:none;
+  transition:border-color 0.2s, box-shadow 0.2s;
+  -moz-appearance:textfield;
+}
+.num-input::-webkit-outer-spin-button,
+.num-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+.num-input:focus { border-color:#7c6ef5; box-shadow:0 0 0 3px rgba(124,110,245,0.2); }
+.num-input.error { border-color:#ef4444; box-shadow:0 0 0 3px rgba(239,68,68,0.15); }
+
+.guess-btn {
+  background:#7c6ef5; border:none; border-radius:10px;
+  padding:13px 22px; font-family:'Syne',sans-serif;
+  font-size:0.88rem; font-weight:700; color:#fff; cursor:pointer;
+  transition:background 0.2s, transform 0.15s, box-shadow 0.2s;
+  white-space:nowrap;
+}
+.guess-btn:hover:not(:disabled) { background:#9585f8; transform:translateY(-2px); box-shadow:0 6px 20px rgba(124,110,245,0.35); }
+.guess-btn:active:not(:disabled) { transform:translateY(0); }
+.guess-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+.feedback-box { min-height:46px; display:flex; align-items:center; justify-content:center; margin-bottom:18px; }
+.feedback-msg {
+  font-size:0.95rem; font-weight:700;
+  padding:9px 18px; border-radius:8px;
+  border:1px solid transparent; display:none;
+}
+.feedback-msg.show { display:block; }
+.feedback-msg.high  { background:rgba(239,68,68,0.1);   color:#ef4444; border-color:rgba(239,68,68,0.25); }
+.feedback-msg.low   { background:rgba(124,110,245,0.1); color:#7c6ef5; border-color:rgba(124,110,245,0.25); }
+.feedback-msg.win   { background:rgba(34,211,160,0.1);  color:#22d3a0; border-color:rgba(34,211,160,0.25); }
+.feedback-msg.over  { background:rgba(239,68,68,0.1);   color:#ef4444; border-color:rgba(239,68,68,0.25); }
+.feedback-msg.warn  { background:rgba(245,158,11,0.1);  color:#f59e0b; border-color:rgba(245,158,11,0.25); }
+
+.history-label { font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase; color:#55556a; margin-bottom:8px; }
+.history-list { display:flex; flex-wrap:wrap; gap:6px; min-height:30px; }
+.h-chip {
+  font-family:'Space Mono',monospace; font-size:0.68rem;
+  padding:4px 10px; border-radius:6px; border:1px solid #1e1e2e;
+  animation:popin 0.2s ease;
+}
+@keyframes popin { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+.h-chip.high { color:#ef4444; border-color:rgba(239,68,68,0.35); background:rgba(239,68,68,0.07); }
+.h-chip.low  { color:#7c6ef5; border-color:rgba(124,110,245,0.35); background:rgba(124,110,245,0.07); }
+.h-chip.win  { color:#22d3a0; border-color:rgba(34,211,160,0.35); background:rgba(34,211,160,0.07); }
+
+.prog-wrap { margin-top:18px; }
+.prog-track { background:#1e1e2e; border-radius:4px; height:5px; overflow:hidden; }
+.prog-fill { height:100%; border-radius:4px; transition:width 0.4s ease, background 0.4s ease; }
+
+/* ── RESULT ── */
+.result-wrap { text-align:center; }
+.result-emoji { font-size:3.8rem; display:block; margin-bottom:12px; animation:pop 0.5s ease; }
+@keyframes pop { 0%{transform:scale(0)} 70%{transform:scale(1.15)} 100%{transform:scale(1)} }
+.result-title { font-size:2rem; font-weight:800; letter-spacing:-0.02em; margin-bottom:8px; }
+.result-title.win  { color:#22d3a0; }
+.result-title.lose { color:#ef4444; }
+.result-desc { font-size:0.84rem; color:#55556a; line-height:1.6; margin-bottom:24px; }
+.result-desc strong { color:#e8e8f0; }
+
+.stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:20px; }
+.stat { background:#0a0a0f; border:1px solid #1e1e2e; border-radius:12px; padding:14px 8px; text-align:center; }
+.stat-val { font-family:'Space Mono',monospace; font-size:1.4rem; font-weight:700; color:#7c6ef5; display:block; }
+.stat-key { font-size:0.58rem; letter-spacing:0.2em; text-transform:uppercase; color:#55556a; margin-top:4px; display:block; }
+
+.record-badge {
+  background:rgba(34,211,160,0.1); border:1px solid rgba(34,211,160,0.3);
+  border-radius:8px; padding:9px 16px;
+  font-size:0.76rem; color:#22d3a0; font-weight:700;
+  margin-bottom:18px; display:none;
+}
+.record-badge.show { display:block; }
+.btn-row { display:flex; gap:10px; }
+
+/* ── MP: TURN TRANSITION ── */
+.turn-screen {
+  text-align:center; padding:10px 0;
+}
+.turn-avatar-big {
+  width:80px; height:80px; border-radius:20px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Space Mono',monospace; font-size:1.8rem; font-weight:700;
+  margin:0 auto 16px;
+  animation:pop 0.4s ease;
+}
+.turn-name { font-size:1.6rem; font-weight:800; margin-bottom:6px; }
+.turn-sub { font-size:0.8rem; color:#55556a; margin-bottom:24px; }
+.turn-secret-reminder {
+  background:#1e1e2e; border-radius:10px; padding:12px 16px;
+  font-family:'Space Mono',monospace; font-size:0.72rem; color:#55556a;
+  margin-bottom:20px; line-height:1.6;
+}
+
+/* ── MP: PLAYER HEADER IN GAME ── */
+.mp-player-bar {
+  display:flex; align-items:center; gap:12px;
+  background:#0a0a0f; border:1px solid #1e1e2e;
+  border-radius:12px; padding:10px 14px; margin-bottom:18px;
+}
+.mp-avatar {
+  width:36px; height:36px; border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Space Mono',monospace; font-size:0.8rem; font-weight:700;
+  flex-shrink:0;
+}
+.mp-player-info { flex:1; }
+.mp-player-name { font-size:0.88rem; font-weight:700; }
+.mp-player-sub { font-size:0.62rem; color:#55556a; font-family:'Space Mono',monospace; }
+.mp-round-info { font-family:'Space Mono',monospace; font-size:0.65rem; color:#55556a; text-align:right; }
+
+/* ── MP: SCOREBOARD ── */
+.scoreboard {
+  display:flex; flex-direction:column; gap:8px; margin-bottom:20px;
+}
+.score-row {
+  display:flex; align-items:center; gap:12px;
+  background:#0a0a0f; border:1px solid #1e1e2e;
+  border-radius:12px; padding:12px 14px;
+  transition:border-color 0.3s, box-shadow 0.3s;
+  animation:popin 0.3s ease;
+}
+.score-row.leader {
+  border-color:rgba(34,211,160,0.4);
+  box-shadow:0 0 16px rgba(34,211,160,0.1);
+}
+.score-rank {
+  font-family:'Space Mono',monospace; font-size:0.75rem;
+  font-weight:700; color:#55556a; width:20px; text-align:center;
+}
+.score-rank.gold   { color:#f59e0b; }
+.score-rank.silver { color:#94a3b8; }
+.score-rank.bronze { color:#cd7c3a; }
+.score-avatar {
+  width:32px; height:32px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Space Mono',monospace; font-size:0.7rem; font-weight:700;
+  flex-shrink:0;
+}
+.score-name { flex:1; font-size:0.88rem; font-weight:700; }
+.score-wins { font-family:'Space Mono',monospace; font-size:0.72rem; color:#55556a; }
+.score-wins strong { color:#22d3a0; font-size:1rem; }
+.score-guesses-best {
+  font-family:'Space Mono',monospace; font-size:0.62rem; color:#55556a;
+  text-align:right;
+}
+
+.mp-result-title { font-size:1.7rem; font-weight:800; letter-spacing:-0.02em; margin-bottom:6px; color:#22d3a0; }
+.mp-round-badge {
+  display:inline-block; background:rgba(251,113,133,0.12); border:1px solid rgba(251,113,133,0.3);
+  border-radius:20px; padding:5px 14px;
+  font-family:'Space Mono',monospace; font-size:0.62rem; color:#fb7185;
+  margin-bottom:18px; letter-spacing:0.1em;
+}
+
+/* ── MP: ROUND SUMMARY per player ── */
+.round-results { display:flex; flex-direction:column; gap:6px; margin-bottom:20px; }
+.rr-row {
+  display:flex; align-items:center; gap:10px;
+  background:#0a0a0f; border:1px solid #1e1e2e;
+  border-radius:10px; padding:10px 12px;
+}
+.rr-avatar {
+  width:28px; height:28px; border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Space Mono',monospace; font-size:0.65rem; font-weight:700;
+  flex-shrink:0;
+}
+.rr-name { flex:1; font-size:0.82rem; font-weight:700; }
+.rr-result { font-family:'Space Mono',monospace; font-size:0.7rem; }
+.rr-result.won  { color:#22d3a0; }
+.rr-result.lost { color:#ef4444; }
+
+.crown { display:inline-block; margin-right:4px; }
+
+/* ── ANIMATIONS ── */
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-7px)} 40%{transform:translateX(7px)}
+  60%{transform:translateX(-5px)} 80%{transform:translateX(5px)}
+}
+.shake { animation:shake 0.35s ease; }
+
+@keyframes fadeSlideIn {
+  from { opacity:0; transform:translateY(10px); }
+  to { opacity:1; transform:translateY(0); }
+}
+.screen.active { animation:fadeSlideIn 0.25s ease; }
+
+/* Add player btn */
+.add-player-btn {
+  background:transparent; border:2px dashed #1e1e2e;
+  border-radius:10px; padding:10px; width:100%;
+  font-family:'Syne',sans-serif; font-size:0.8rem;
+  color:#55556a; cursor:pointer; text-align:center;
+  transition:border-color 0.2s, color 0.2s;
+}
+.add-player-btn:hover { border-color:#fb7185; color:#fb7185; }
+.remove-player-btn {
+  background:transparent; border:none; color:#55556a;
+  cursor:pointer; font-size:1rem; padding:4px 8px;
+  border-radius:6px; transition:color 0.2s, background 0.2s;
+  flex-shrink:0;
+}
+.remove-player-btn:hover { color:#ef4444; background:rgba(239,68,68,0.1); }
+
+.divider {
+  height:1px; background:#1e1e2e; margin:18px 0;
+}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="floating-nav nav-home">🏠 Home</a>
+<a href="v1ofline.html" class="floating-nav nav-back">🔙 Back</a>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<div class="wrap">
+  <div class="header">
+    <div class="badge-tag">NUMBER GAME</div>
+    <h1>Guess The<br><span>Number</span></h1>
+    <p class="sub">Solo or multiplayer — test your instincts</p>
+  </div>
+
+  <div class="card">
+
+    <div class="screen active" id="s-menu">
+      <p class="sec-title">Select Mode</p>
+      <div class="mode-grid">
+        <button class="mode-btn solo" onclick="goSoloDiff()">
+          <span class="mode-icon">
+            <svg width="32" height="32" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#7c6ef5" stroke-width="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#7c6ef5" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          <span class="mode-label">Solo</span>
+          <span class="mode-desc">Classic game vs the computer. Pick your difficulty.</span>
+          <span class="mode-tag">1 PLAYER</span>
+        </button>
+        <button class="mode-btn multi" onclick="goMultiSetup()">
+          <span class="mode-icon">
+            <svg width="32" height="32" fill="none" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3.2" stroke="#fb7185" stroke-width="1.8"/><circle cx="16" cy="8" r="3.2" stroke="#fb7185" stroke-width="1.8"/><path d="M2 20c0-3.3 2.7-6 6-6" stroke="#fb7185" stroke-width="1.8" stroke-linecap="round"/><path d="M22 20c0-3.3-2.7-6-6-6" stroke="#fb7185" stroke-width="1.8" stroke-linecap="round"/><path d="M9 20c0-3.3 1.3-5 3-5s3 1.7 3 5" stroke="#fb7185" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          <span class="mode-label">Multiplayer</span>
+          <span class="mode-desc">Hot-seat mode. Players take turns guessing.</span>
+          <span class="mode-tag">2–4 PLAYERS</span>
+        </button>
+      </div>
+      <div class="best-row">
+        <div class="best-chip" id="best-easy">Easy: —</div>
+        <div class="best-chip" id="best-medium">Med: —</div>
+        <div class="best-chip" id="best-hard">Hard: —</div>
+      </div>
+    </div>
+
+    <div class="screen" id="s-diff">
+      <button class="back-btn" onclick="showScreen('s-menu')">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M19 12H5M5 12l7-7M5 12l7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Back
+      </button>
+      <p class="sec-title">Choose Difficulty</p>
+      <div class="diff-grid">
+        <button class="diff-btn" id="btn-easy" onclick="startSoloGame('easy')">
+          <span class="diff-icon">
+            <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M12 2C8 2 4 5.5 4 10c0 3.5 2.5 6.5 6 8v2h4v-2c3.5-1.5 6-4.5 6-8 0-4.5-4-8-8-8z" stroke="#22d3a0" stroke-width="1.6"/><path d="M9 13s1 2 3 2 3-2 3-2" stroke="#22d3a0" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>
+          <span class="diff-name" style="color:#22d3a0">Easy</span>
+          <span class="diff-range">1 – 50</span>
+          <span class="diff-tries">10 tries</span>
+        </button>
+        <button class="diff-btn" id="btn-medium" onclick="startSoloGame('medium')">
+          <span class="diff-icon">
+            <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M12 3L14.5 8.5L21 9.3l-4.5 4.4 1.1 6.3L12 17l-5.6 3 1.1-6.3L3 9.3l6.5-.8L12 3z" stroke="#f59e0b" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="diff-name" style="color:#f59e0b">Medium</span>
+          <span class="diff-range">1 – 100</span>
+          <span class="diff-tries">7 tries</span>
+        </button>
+        <button class="diff-btn" id="btn-hard" onclick="startSoloGame('hard')">
+          <span class="diff-icon">
+            <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M12 3L9 9H3l5 4.5-2 6.5 6-3.5 6 3.5-2-6.5L21 9h-6z" stroke="#ef4444" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="diff-name" style="color:#ef4444">Hard</span>
+          <span class="diff-range">1 – 200</span>
+          <span class="diff-tries">5 tries</span>
+        </button>
+      </div>
+      <div class="best-row">
+        <div class="best-chip" id="bd-easy">Easy: —</div>
+        <div class="best-chip" id="bd-medium">Med: —</div>
+        <div class="best-chip" id="bd-hard">Hard: —</div>
+      </div>
+    </div>
+
+    <div class="screen" id="s-mp-setup">
+      <button class="back-btn" onclick="showScreen('s-menu')">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M19 12H5M5 12l7-7M5 12l7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Back
+      </button>
+      <p class="sec-title">Multiplayer Setup</p>
+
+      <div class="mp-setup-form">
+        <div>
+          <span class="field-label">Players</span>
+          <div class="player-fields" id="player-fields"></div>
+          <button class="add-player-btn" id="add-player-btn" onclick="addPlayerField()" style="margin-top:8px">+ Add Player</button>
+        </div>
+
+        <div>
+          <span class="field-label">Difficulty</span>
+          <div class="diff-grid" style="margin-bottom:0">
+            <button class="diff-btn" id="mp-btn-easy" onclick="selectMpDiff('easy')">
+              <span class="diff-name" style="color:#22d3a0;font-size:0.75rem">Easy</span>
+              <span class="diff-range">1 – 50</span>
+              <span class="diff-tries">10 tries</span>
+            </button>
+            <button class="diff-btn" id="mp-btn-medium" onclick="selectMpDiff('medium')">
+              <span class="diff-name" style="color:#f59e0b;font-size:0.75rem">Medium</span>
+              <span class="diff-range">1 – 100</span>
+              <span class="diff-tries">7 tries</span>
+            </button>
+            <button class="diff-btn" id="mp-btn-hard" onclick="selectMpDiff('hard')">
+              <span class="diff-name" style="color:#ef4444;font-size:0.75rem">Hard</span>
+              <span class="diff-range">1 – 200</span>
+              <span class="diff-tries">5 tries</span>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <span class="field-label">Rounds</span>
+          <div class="rounds-row">
+            <button class="round-opt selected" data-r="1" onclick="selectRounds(this)">1</button>
+            <button class="round-opt" data-r="3" onclick="selectRounds(this)">3</button>
+            <button class="round-opt" data-r="5" onclick="selectRounds(this)">5</button>
+            <button class="round-opt" data-r="7" onclick="selectRounds(this)">7</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-pri pink" onclick="startMultiplayer()">Start Game</button>
+    </div>
+
+    <div class="screen" id="s-turn">
+      <div class="turn-screen">
+        <div class="turn-avatar-big" id="turn-avatar-big"></div>
+        <div class="turn-name" id="turn-name"></div>
+        <div class="turn-sub" id="turn-sub">It is your turn to guess!</div>
+        <div class="turn-secret-reminder">
+          Pass the device to <strong id="turn-name2"></strong>.<br>
+          Make sure the current player is not watching!
+        </div>
+        <button class="btn-pri pink" onclick="beginTurn()">I am ready — Start</button>
+      </div>
+    </div>
+
+    <div class="screen" id="s-game">
+      <div id="mp-player-bar" class="mp-player-bar" style="display:none">
+        <div class="mp-avatar" id="mp-av"></div>
+        <div class="mp-player-info">
+          <div class="mp-player-name" id="mp-pname"></div>
+          <div class="mp-player-sub" id="mp-psub"></div>
+        </div>
+        <div class="mp-round-info" id="mp-round-info"></div>
+      </div>
+
+      <div class="game-header">
+        <span class="level-badge" id="lvl-badge">Easy</span>
+        <div class="tries-info"><strong id="tries-num">10</strong> tries left</div>
+      </div>
+
+      <div class="range-box">
+        <span>Guess range</span>
+        <span id="range-txt">1 — 50</span>
+      </div>
+
+      <div class="input-row">
+        <input class="num-input" id="num-inp" type="number" placeholder="Enter number" autocomplete="off"/>
+        <button class="guess-btn" id="guess-btn" onclick="doGuess()">Guess</button>
+      </div>
+
+      <div class="feedback-box">
+        <div class="feedback-msg" id="fb"></div>
+      </div>
+
+      <div class="history-label">Guess history</div>
+      <div class="history-list" id="history"></div>
+
+      <div class="prog-wrap">
+        <div class="prog-track"><div class="prog-fill" id="prog" style="width:100%;background:#22d3a0"></div></div>
+      </div>
+    </div>
+
+    <div class="screen" id="s-result">
+      <div class="result-wrap">
+        <span class="result-emoji" id="r-emoji"></span>
+        <div class="result-title" id="r-title">You Won!</div>
+        <p class="result-desc" id="r-desc"></p>
+        <div class="stats">
+          <div class="stat"><span class="stat-val" id="r-guesses">—</span><span class="stat-key">Guesses</span></div>
+          <div class="stat"><span class="stat-val" id="r-level">—</span><span class="stat-key">Level</span></div>
+          <div class="stat"><span class="stat-val" id="r-best">—</span><span class="stat-key">Best</span></div>
+        </div>
+        <div class="record-badge" id="r-record">New Personal Best!</div>
+        <div class="btn-row">
+          <button class="btn-sec" onclick="showScreen('s-menu')">Menu</button>
+          <button class="btn-pri" onclick="startSoloGame(currentLevel)">Play Again</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen" id="s-mp-round">
+      <div class="result-wrap">
+        <div class="mp-round-badge" id="mp-round-badge">ROUND 1 COMPLETE</div>
+        <div class="mp-result-title" id="mp-round-winner-title"></div>
+        <p class="result-desc" id="mp-round-desc"></p>
+        <div class="round-results" id="round-results"></div>
+        <div class="divider"></div>
+        <div style="margin-bottom:14px">
+          <p class="sec-title" style="margin-bottom:10px">Leaderboard</p>
+          <div class="scoreboard" id="mp-scoreboard-round"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-sec" onclick="endMpGame()">End Game</button>
+          <button class="btn-pri pink" id="mp-next-btn" onclick="nextMpRound()">Next Round</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen" id="s-mp-final">
+      <div class="result-wrap">
+        <span class="result-emoji" id="mp-final-emoji"></span>
+        <div class="result-title win" id="mp-final-title"></div>
+        <p class="result-desc" id="mp-final-desc"></p>
+        <div class="divider"></div>
+        <p class="sec-title" style="margin-bottom:14px">Final Standings</p>
+        <div class="scoreboard" id="mp-scoreboard-final"></div>
+        <div class="btn-row" style="margin-top:6px">
+          <button class="btn-sec" onclick="showScreen('s-menu')">Menu</button>
+          <button class="btn-pri pink" onclick="restartMpGame()">Play Again</button>
+        </div>
+      </div>
+    </div>
+
+  </div></div><script>
+// ─── CONFIG ───────────────────────────────────────────────────────────
+const LEVELS = {
+  easy:   { min:1, max:50,  tries:10, label:'Easy',   color:'#22d3a0' },
+  medium: { min:1, max:100, tries:7,  label:'Medium', color:'#f59e0b' },
+  hard:   { min:1, max:200, tries:5,  label:'Hard',   color:'#ef4444' },
+};
+
+const PLAYER_COLORS = ['#7c6ef5','#fb7185','#f59e0b','#22d3a0'];
+const PLAYER_INITIALS_BG = [
+  'rgba(124,110,245,0.18)','rgba(251,113,133,0.18)',
+  'rgba(245,158,11,0.18)','rgba(34,211,160,0.18)'
+];
+
+// ─── SOLO STATE ───────────────────────────────────────────────────────
+let secret = 0;
+let currentLevel = 'easy';
+let triesLeft = 10;
+let maxTries = 10;
+let guessed = [];
+let active = false;
+let isMpMode = false;
+
+let best = { easy: null, medium: null, hard: null };
+try { best = JSON.parse(localStorage.getItem('ng_best')) || best; } catch(e) {}
+
+// ─── MULTIPLAYER STATE ────────────────────────────────────────────────
+let mpPlayers = [];       // [{name, wins, totalGuesses, bestRound}]
+let mpLevel = 'easy';
+let mpTotalRounds = 1;
+let mpCurrentRound = 0;
+let mpCurrentPlayerIdx = 0;
+let mpRoundResults = []; // [{playerIdx, guesses, won}] per round
+let mpSecret = 0;
+let mpSetupPlayers = []; // names from setup
+
+// ─── HELPERS ──────────────────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+function showFeedback(msg, type) {
+  const el = $('fb');
+  el.textContent = msg;
+  el.className = 'feedback-msg show ' + type;
+}
+
+function hideFeedback() {
+  $('fb').className = 'feedback-msg';
+  $('fb').textContent = '';
+}
+
+function saveBest() {
+  try { localStorage.setItem('ng_best', JSON.stringify(best)); } catch(e) {}
+}
+
+function initials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2) || '??';
+}
+
+function playerColor(idx) { return PLAYER_COLORS[idx % PLAYER_COLORS.length]; }
+function playerBg(idx)    { return PLAYER_INITIALS_BG[idx % PLAYER_INITIALS_BG.length]; }
+
+function updateBestDisplay() {
+  ['easy','medium','hard'].forEach(k => {
+    const v = best[k];
+    const txt = v !== null ? v + (v===1?' guess':' guesses') : '--';
+    const labels = { easy:'Easy', medium:'Med', hard:'Hard' };
+    if ($('best-' + k)) $('best-' + k).textContent = labels[k] + ': ' + txt;
+    if ($('bd-'   + k)) $('bd-'   + k).textContent = labels[k] + ': ' + txt;
+  });
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────
+function goSoloDiff() {
+  updateBestDisplay();
+  showScreen('s-diff');
+}
+
+function goMultiSetup() {
+  initMpSetup();
+  showScreen('s-mp-setup');
+}
+
+// ─── DIFF BUTTON HOVER ────────────────────────────────────────────────
+function bindDiffHover(btnId, col) {
+  const btn = $(btnId);
+  if (!btn) return;
+  btn.addEventListener('mouseenter', () => {
+    btn.style.borderColor = col;
+    btn.style.boxShadow = '0 0 18px ' + col + '33, inset 0 0 18px ' + col + '11';
+  });
+  btn.addEventListener('mouseleave', () => {
+    btn.style.borderColor = '#1e1e2e';
+    btn.style.boxShadow = 'none';
+  });
+}
+bindDiffHover('btn-easy',   '#22d3a0');
+bindDiffHover('btn-medium', '#f59e0b');
+bindDiffHover('btn-hard',   '#ef4444');
+bindDiffHover('mp-btn-easy',   '#22d3a0');
+bindDiffHover('mp-btn-medium', '#f59e0b');
+bindDiffHover('mp-btn-hard',   '#ef4444');
+
+// ─── SOLO GAME ────────────────────────────────────────────────────────
+function startSoloGame(lvl) {
+  isMpMode = false;
+  currentLevel = lvl;
+  const cfg = LEVELS[lvl];
+  secret    = Math.floor(Math.random() * (cfg.max - cfg.min + 1)) + cfg.min;
+  triesLeft = cfg.tries;
+  maxTries  = cfg.tries;
+  guessed   = [];
+  active    = true;
+
+  const badge = $('lvl-badge');
+  badge.textContent = cfg.label;
+  badge.style.color = cfg.color;
+  badge.style.borderColor = cfg.color;
+
+  $('range-txt').textContent  = cfg.min + ' — ' + cfg.max;
+  $('tries-num').textContent  = triesLeft;
+  $('prog').style.width       = '100%';
+  $('prog').style.background  = '#22d3a0';
+  $('history').innerHTML      = '';
+  $('mp-player-bar').style.display = 'none';
+  hideFeedback();
+
+  const inp = $('num-inp');
+  inp.min = cfg.min; inp.max = cfg.max;
+  inp.value = ''; inp.placeholder = cfg.min + ' – ' + cfg.max;
+  inp.disabled = false; inp.className = 'num-input';
+  $('guess-btn').disabled = false;
+
+  showScreen('s-game');
+  inp.focus();
+}
+
+// ─── MULTIPLAYER SETUP ────────────────────────────────────────────────
+function initMpSetup() {
+  const fields = $('player-fields');
+  fields.innerHTML = '';
+  mpSetupPlayers = ['Player 1', 'Player 2'];
+  mpLevel = 'easy';
+  mpTotalRounds = 1;
+  mpSetupPlayers.forEach((_, i) => renderPlayerField(i));
+  highlightMpDiff('easy');
+  document.querySelectorAll('.round-opt').forEach(b => {
+    b.classList.toggle('selected', b.dataset.r === '1');
+  });
+}
+
+function renderPlayerField(idx) {
+  const fields = $('player-fields');
+  const row = document.createElement('div');
+  row.className = 'player-row';
+  row.id = 'prow-' + idx;
+
+  const av = document.createElement('div');
+  av.className = 'player-avatar';
+  av.style.color = playerColor(idx);
+  av.style.background = playerBg(idx);
+  av.style.borderColor = playerColor(idx) + '44';
+  av.textContent = 'P' + (idx + 1);
+
+  const inp = document.createElement('input');
+  inp.className = 'text-input';
+  inp.placeholder = 'Player ' + (idx + 1) + ' name';
+  inp.value = mpSetupPlayers[idx] || ('Player ' + (idx + 1));
+  inp.oninput = () => { mpSetupPlayers[idx] = inp.value.trim() || ('Player ' + (idx + 1)); };
+
+  row.appendChild(av);
+  row.appendChild(inp);
+
+  if (idx >= 2) {
+    const rm = document.createElement('button');
+    rm.className = 'remove-player-btn';
+    rm.innerHTML = '&times;';
+    rm.onclick = () => removePlayerField(idx);
+    row.appendChild(rm);
+  }
+
+  fields.appendChild(row);
+  updateAddBtn();
+}
+
+function addPlayerField() {
+  if (mpSetupPlayers.length >= 4) return;
+  const idx = mpSetupPlayers.length;
+  mpSetupPlayers.push('Player ' + (idx + 1));
+  renderPlayerField(idx);
+  updateAddBtn();
+}
+
+function removePlayerField(idx) {
+  mpSetupPlayers.splice(idx, 1);
+  const fields = $('player-fields');
+  fields.innerHTML = '';
+  mpSetupPlayers.forEach((_, i) => renderPlayerField(i));
+  updateAddBtn();
+}
+
+function updateAddBtn() {
+  $('add-player-btn').style.display = mpSetupPlayers.length >= 4 ? 'none' : 'block';
+}
+
+function selectMpDiff(lvl) {
+  mpLevel = lvl;
+  highlightMpDiff(lvl);
+}
+
+function highlightMpDiff(lvl) {
+  ['easy','medium','hard'].forEach(k => {
+    const btn = $('mp-btn-' + k);
+    if (!btn) return;
+    const col = LEVELS[k].color;
+    if (k === lvl) {
+      btn.style.borderColor = col;
+      btn.style.boxShadow = '0 0 16px ' + col + '44';
+    } else {
+      btn.style.borderColor = '#1e1e2e';
+      btn.style.boxShadow = 'none';
+    }
+  });
+}
+
+function selectRounds(btn) {
+  document.querySelectorAll('.round-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  mpTotalRounds = parseInt(btn.dataset.r, 10);
+}
+
+// ─── START MULTIPLAYER ────────────────────────────────────────────────
+function startMultiplayer() {
+  const names = [];
+  document.querySelectorAll('#player-fields .text-input').forEach(inp => {
+    names.push(inp.value.trim() || inp.placeholder);
+  });
+  if (names.length < 2) { alert('Need at least 2 players!'); return; }
+
+  mpPlayers = names.map(n => ({ name: n, wins: 0, totalGuesses: 0, bestRound: null }));
+  mpCurrentRound = 0;
+
+  startNextMpRound();
+}
+
+function startNextMpRound() {
+  mpCurrentRound++;
+  mpCurrentPlayerIdx = 0;
+  mpRoundResults = [];
+
+  // Generate secret for this round (same for all players)
+  const cfg = LEVELS[mpLevel];
+  mpSecret = Math.floor(Math.random() * (cfg.max - cfg.min + 1)) + cfg.min;
+
+  showTurnTransition();
+}
+
+// ─── TURN TRANSITION ──────────────────────────────────────────────────
+function showTurnTransition() {
+  const p = mpPlayers[mpCurrentPlayerIdx];
+  const idx = mpCurrentPlayerIdx;
+  const col = playerColor(idx);
+  const bg  = playerBg(idx);
+
+  const av = $('turn-avatar-big');
+  av.textContent = initials(p.name);
+  av.style.color = col;
+  av.style.background = bg;
+  av.style.border = '2px solid ' + col + '66';
+
+  $('turn-name').textContent  = p.name;
+  $('turn-name2').textContent = p.name;
+  $('turn-sub').textContent   = 'Round ' + mpCurrentRound + ' of ' + mpTotalRounds + ' — Your turn to guess!';
+
+  showScreen('s-turn');
+}
+
+function beginTurn() {
+  isMpMode = true;
+  currentLevel = mpLevel;
+  const cfg = LEVELS[mpLevel];
+  secret    = mpSecret;
+  triesLeft = cfg.tries;
+  maxTries  = cfg.tries;
+  guessed   = [];
+  active    = true;
+
+  // Setup game screen
+  const badge = $('lvl-badge');
+  badge.textContent = cfg.label;
+  badge.style.color = cfg.color;
+  badge.style.borderColor = cfg.color;
+
+  $('range-txt').textContent  = cfg.min + ' — ' + cfg.max;
+  $('tries-num').textContent  = triesLeft;
+  $('prog').style.width       = '100%';
+  $('prog').style.background  = '#22d3a0';
+  $('history').innerHTML      = '';
+  hideFeedback();
+
+  // MP player bar
+  const idx = mpCurrentPlayerIdx;
+  const p   = mpPlayers[idx];
+  const col = playerColor(idx);
+  const bg  = playerBg(idx);
+
+  $('mp-player-bar').style.display = 'flex';
+  $('mp-av').textContent = initials(p.name);
+  $('mp-av').style.color = col;
+  $('mp-av').style.background = bg;
+  $('mp-pname').textContent = p.name;
+  $('mp-pname').style.color = col;
+  $('mp-psub').textContent  = 'Round ' + mpCurrentRound + ' / ' + mpTotalRounds;
+  $('mp-round-info').innerHTML = '<span style="color:#55556a">Player</span><br><strong style="color:#e8e8f0">' + (idx+1) + '/' + mpPlayers.length + '</strong>';
+
+  const inp = $('num-inp');
+  inp.min = cfg.min; inp.max = cfg.max;
+  inp.value = ''; inp.placeholder = cfg.min + ' – ' + cfg.max;
+  inp.disabled = false; inp.className = 'num-input';
+  $('guess-btn').disabled = false;
+
+  showScreen('s-game');
+  inp.focus();
+}
+
+// ─── MAKE A GUESS (shared) ────────────────────────────────────────────
+function doGuess() {
+  if (!active) return;
+
+  const cfg = LEVELS[currentLevel];
+  const inp = $('num-inp');
+  const val = parseInt(inp.value, 10);
+
+  if (isNaN(val) || val < cfg.min || val > cfg.max) {
+    inp.classList.add('error');
+    inp.classList.remove('shake');
+    void inp.offsetWidth;
+    inp.classList.add('shake');
+    setTimeout(() => inp.classList.remove('shake','error'), 400);
+    showFeedback('Enter a number between ' + cfg.min + ' and ' + cfg.max, 'warn');
+    return;
+  }
+
+  if (guessed.includes(val)) {
+    showFeedback('You already tried ' + val + '!', 'warn');
+    inp.value = '';
+    inp.focus();
+    return;
+  }
+
+  guessed.push(val);
+  inp.value = '';
+
+  const isWin  = val === secret;
+  const isHigh = val > secret;
+
+  if (!isWin) triesLeft--;
+
+  $('tries-num').textContent = triesLeft;
+  const pct = (triesLeft / maxTries) * 100;
+  const progColor = pct > 55 ? '#22d3a0' : pct > 25 ? '#f59e0b' : '#ef4444';
+  $('prog').style.width = pct + '%';
+  $('prog').style.background = progColor;
+
+  addChip(val, isWin ? 'win' : isHigh ? 'high' : 'low');
+
+  if (isWin) {
+    active = false;
+    $('guess-btn').disabled = true;
+    inp.disabled = true;
+    showFeedback('Correct! The number was ' + secret + '!', 'win');
+
+    if (isMpMode) {
+      setTimeout(() => finishMpTurn(true), 900);
+    } else {
+      setTimeout(() => showSoloResult(true), 800);
+    }
+    return;
+  }
+
+  if (triesLeft <= 0) {
+    active = false;
+    $('guess-btn').disabled = true;
+    inp.disabled = true;
+    showFeedback('Game over! The number was ' + secret, 'over');
+
+    if (isMpMode) {
+      setTimeout(() => finishMpTurn(false), 900);
+    } else {
+      setTimeout(() => showSoloResult(false), 800);
+    }
+    return;
+  }
+
+  showFeedback(isHigh ? 'Too High! Go lower.' : 'Too Low! Go higher.', isHigh ? 'high' : 'low');
+  inp.focus();
+}
+
+function addChip(val, type) {
+  const chip = document.createElement('div');
+  chip.className = 'h-chip ' + type;
+  chip.textContent = val + (type === 'high' ? ' up' : type === 'low' ? ' dn' : ' ok');
+  $('history').appendChild(chip);
+}
+
+// ─── SOLO RESULT ──────────────────────────────────────────────────────
+function showSoloResult(won) {
+  const cfg = LEVELS[currentLevel];
+  const totalGuesses = guessed.length;
+  const prev = best[currentLevel];
+  let newRecord = false;
+
+  if (won && (prev === null || totalGuesses < prev)) {
+    best[currentLevel] = totalGuesses;
+    saveBest();
+    newRecord = true;
+  }
+
+  $('r-emoji').textContent = won ? '' : '';
+  // use SVG-free approach: just text
+  $('r-emoji').innerHTML = won
+    ? '<span style="font-size:3rem">win</span>'
+    : '<span style="font-size:3rem">over</span>';
+
+  // Proper emoji is fine in content text just not in code strings
+  const title = $('r-title');
+  title.textContent = won ? 'You Won!' : 'Game Over!';
+  title.className = 'result-title ' + (won ? 'win' : 'lose');
+
+  if (won) {
+    $('r-desc').innerHTML = 'You found <strong>' + secret + '</strong> in <strong>' + totalGuesses + '</strong> ' + (totalGuesses===1?'guess':'guesses') + ' on <strong>' + cfg.label + '</strong>!';
+  } else {
+    $('r-desc').innerHTML = 'The secret number was <strong>' + secret + '</strong>. Better luck next time!';
+  }
+
+  $('r-guesses').textContent = totalGuesses;
+  $('r-level').textContent   = cfg.label;
+  $('r-best').textContent    = best[currentLevel] !== null ? best[currentLevel] : '--';
+
+  const rec = $('r-record');
+  if (newRecord) rec.classList.add('show'); else rec.classList.remove('show');
+
+  updateBestDisplay();
+  showScreen('s-result');
+}
+
+// ─── MP TURN FINISH ───────────────────────────────────────────────────
+function finishMpTurn(won) {
+  const totalGuesses = guessed.length;
+  mpRoundResults.push({ playerIdx: mpCurrentPlayerIdx, guesses: totalGuesses, won });
+
+  // Update player stats
+  if (won) {
+    mpPlayers[mpCurrentPlayerIdx].wins++;
+    mpPlayers[mpCurrentPlayerIdx].totalGuesses += totalGuesses;
+    const prevBest = mpPlayers[mpCurrentPlayerIdx].bestRound;
+    if (prevBest === null || totalGuesses < prevBest) {
+      mpPlayers[mpCurrentPlayerIdx].bestRound = totalGuesses;
+    }
+  }
+
+  mpCurrentPlayerIdx++;
+
+  if (mpCurrentPlayerIdx < mpPlayers.length) {
+    // More players to go this round
+    showTurnTransition();
+  } else {
+    // Round complete
+    showMpRoundResult();
+  }
+}
+
+// ─── MP ROUND RESULT ─────────────────────────────────────────────────
+function showMpRoundResult() {
+  $('mp-round-badge').textContent = 'ROUND ' + mpCurrentRound + ' COMPLETE';
+
+  // Find round winner (fewest guesses among those who won)
+  const winners = mpRoundResults.filter(r => r.won).sort((a,b) => a.guesses - b.guesses);
+  const roundWinner = winners.length > 0 ? winners[0] : null;
+
+  if (roundWinner) {
+    const p = mpPlayers[roundWinner.playerIdx];
+    const col = playerColor(roundWinner.playerIdx);
+    $('mp-round-winner-title').innerHTML = '<span style="color:' + col + '">' + p.name + '</span> wins the round!';
+    $('mp-round-desc').innerHTML = p.name + ' guessed it in <strong>' + roundWinner.guesses + '</strong> ' + (roundWinner.guesses===1?'try':'tries') + '!';
+  } else {
+    $('mp-round-winner-title').textContent = 'Nobody got it!';
+    $('mp-round-desc').innerHTML = 'The number was <strong>' + mpSecret + '</strong>. No one guessed correctly!';
+  }
+
+  // Round results list
+  const rr = $('round-results');
+  rr.innerHTML = '';
+  mpRoundResults.forEach(r => {
+    const p   = mpPlayers[r.playerIdx];
+    const idx = r.playerIdx;
+    const row = document.createElement('div');
+    row.className = 'rr-row';
+
+    const av = document.createElement('div');
+    av.className = 'rr-avatar';
+    av.textContent = initials(p.name);
+    av.style.color = playerColor(idx);
+    av.style.background = playerBg(idx);
+
+    const name = document.createElement('div');
+    name.className = 'rr-name';
+    name.textContent = p.name;
+
+    const res = document.createElement('div');
+    const isWinner = roundWinner && r.playerIdx === roundWinner.playerIdx;
+    res.className = 'rr-result ' + (r.won ? 'won' : 'lost');
+    if (isWinner) res.textContent = r.guesses + ' tries (winner)';
+    else if (r.won) res.textContent = r.guesses + ' tries';
+    else res.textContent = 'Did not guess';
+
+    row.appendChild(av); row.appendChild(name); row.appendChild(res);
+    rr.appendChild(row);
+  });
+
+  // Scoreboard
+  renderScoreboard('mp-scoreboard-round');
+
+  // Next or end
+  const isLastRound = mpCurrentRound >= mpTotalRounds;
+  const nextBtn = $('mp-next-btn');
+  nextBtn.textContent = isLastRound ? 'See Final Results' : 'Next Round';
+
+  showScreen('s-mp-round');
+}
+
+function nextMpRound() {
+  if (mpCurrentRound >= mpTotalRounds) {
+    showMpFinalResult();
+  } else {
+    startNextMpRound();
+  }
+}
+
+function endMpGame() { showMpFinalResult(); }
+
+// ─── MP FINAL RESULT ──────────────────────────────────────────────────
+function showMpFinalResult() {
+  const sorted = [...mpPlayers].map((p,i) => ({...p, idx:i})).sort((a,b) => {
+    if (b.wins !== a.wins) return b.wins - a.wins;
+    if (a.totalGuesses !== b.totalGuesses) return a.totalGuesses - b.totalGuesses;
+    return 0;
+  });
+
+  const champion = sorted[0];
+  const col = playerColor(champion.idx);
+  const isTie = sorted.length > 1 && sorted[1].wins === champion.wins;
+
+  $('mp-final-emoji').innerHTML = '<span style="font-size:3rem">' + (isTie ? 'TIE' : 'WIN') + '</span>';
+  $('mp-final-title').innerHTML = isTie
+    ? "It's a Tie!"
+    : '<span style="color:' + col + '">' + champion.name + '</span> Wins!';
+  $('mp-final-desc').innerHTML = isTie
+    ? 'Multiple players are tied at <strong>' + champion.wins + '</strong> win' + (champion.wins===1?'':'s') + '!'
+    : champion.name + ' dominated with <strong>' + champion.wins + '</strong> round win' + (champion.wins===1?'':'s') + '!';
+
+  renderScoreboard('mp-scoreboard-final', sorted);
+  showScreen('s-mp-final');
+}
+
+function renderScoreboard(containerId, sortedOverride) {
+  const container = $(containerId);
+  container.innerHTML = '';
+
+  let sorted = sortedOverride;
+  if (!sorted) {
+    sorted = [...mpPlayers].map((p,i) => ({...p, idx:i})).sort((a,b) => {
+      if (b.wins !== a.wins) return b.wins - a.wins;
+      return a.totalGuesses - b.totalGuesses;
+    });
+  }
+
+  const rankLabels = ['1st','2nd','3rd','4th'];
+  const rankClasses = ['gold','silver','bronze',''];
+
+  sorted.forEach((p, rank) => {
+    const idx = p.idx !== undefined ? p.idx : mpPlayers.indexOf(mpPlayers.find(x => x.name === p.name));
+    const row = document.createElement('div');
+    row.className = 'score-row' + (rank === 0 ? ' leader' : '');
+
+    const rankEl = document.createElement('div');
+    rankEl.className = 'score-rank ' + (rankClasses[rank] || '');
+    rankEl.textContent = rankLabels[rank] || (rank+1)+'th';
+
+    const av = document.createElement('div');
+    av.className = 'score-avatar';
+    av.textContent = initials(p.name);
+    av.style.color = playerColor(p.idx !== undefined ? p.idx : rank);
+    av.style.background = playerBg(p.idx !== undefined ? p.idx : rank);
+
+    const name = document.createElement('div');
+    name.className = 'score-name';
+    name.textContent = p.name;
+
+    const winsEl = document.createElement('div');
+    winsEl.className = 'score-wins';
+    winsEl.innerHTML = '<strong>' + p.wins + '</strong> win' + (p.wins===1?'':'s');
+
+    const bestEl = document.createElement('div');
+    bestEl.className = 'score-guesses-best';
+    bestEl.innerHTML = p.bestRound !== null
+      ? 'Best: ' + p.bestRound + ' guess' + (p.bestRound===1?'':'es')
+      : 'No wins';
+
+    row.appendChild(rankEl);
+    row.appendChild(av);
+    row.appendChild(name);
+    row.appendChild(winsEl);
+    row.appendChild(bestEl);
+    container.appendChild(row);
+  });
+}
+
+function restartMpGame() {
+  mpPlayers.forEach(p => { p.wins = 0; p.totalGuesses = 0; p.bestRound = null; });
+  mpCurrentRound = 0;
+  startNextMpRound();
+}
+
+// ─── KEYBOARD ────────────────────────────────────────────────────────
+document.getElementById('num-inp').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doGuess();
+});
+
+// ─── INIT ────────────────────────────────────────────────────────────
+updateBestDisplay();
+</script>
+</body>
+</html>

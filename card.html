@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Memory Match | Core AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ─── BASE RESET & THEME ─── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-color: #030305;
+  --text-main: #f0f0f5;
+  --text-muted: #8b8b9e;
+  --accent-cyan: #00f0ff;
+  --accent-purple: #8a2be2;
+  --glass-bg: rgba(15, 15, 25, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-x: hidden;
+}
+
+/* ─── AMBIENT ANIMATED BACKGROUND ─── */
+.ambient-mesh {
+  position: fixed; inset: 0; z-index: -1;
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.blob {
+  position: absolute; border-radius: 50%; filter: blur(120px);
+  opacity: 0.5; animation: drift 15s infinite alternate ease-in-out;
+}
+.blob-cyan {
+  width: 50vw; height: 50vw; background: var(--accent-cyan);
+  top: -10%; left: -10%; animation-delay: -5s;
+}
+.blob-purple {
+  width: 40vw; height: 40vw; background: var(--accent-purple);
+  bottom: -20%; right: -10%;
+}
+
+@keyframes drift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(10vw, 10vh) scale(1.2); }
+}
+
+/* ─── TOP CONTROLS ─── */
+.top-controls {
+  position: fixed; top: 24px; right: 24px; display: flex; gap: 12px; z-index: 100;
+}
+.ctrl-btn {
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  color: var(--text-main); font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem; font-weight: 600; padding: 10px 18px;
+  border-radius: 30px; cursor: pointer;
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.ctrl-btn:hover {
+  background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3);
+  transform: translateY(-2px);
+}
+
+/* ─── WRAPPER & HEADER ─── */
+.wrap { position:relative; z-index:1; width:100%; max-width:520px; }
+
+.header { text-align:center; margin-bottom:30px; }
+.badge-tag {
+  display:inline-block; font-family:'Space Grotesk',monospace;
+  font-size:clamp(0.55rem, 2vw, 0.65rem); letter-spacing:0.4em; text-transform:uppercase;
+  color: var(--accent-cyan); border:1px solid rgba(0, 240, 255, 0.3);
+  padding:6px 16px; border-radius:30px; margin-bottom:16px;
+  background: rgba(0, 240, 255, 0.05);
+  box-shadow: 0 0 15px rgba(0,240,255,0.1);
+}
+h1 { 
+  font-size:clamp(2rem, 8vw, 3.5rem); font-weight:800; line-height:1.1; 
+  letter-spacing:-0.03em; margin: 0;
+}
+h1 span { 
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* ─── GLASSMORPHISM BOARD ─── */
+.card-container {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px; padding: 30px; position: relative;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* ─── STATS DASHBOARD ─── */
+.stats-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 24px; padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.stat-box { display: flex; flex-direction: column; gap: 4px; }
+.stat-label { 
+  font-family: 'Space Grotesk', sans-serif; font-size: 0.7rem; 
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); 
+}
+.stat-val { 
+  font-family: 'Space Grotesk', monospace; 
+  font-size: clamp(1.1rem, 5vw, 1.4rem); 
+  font-weight: 700; color: #fff; 
+}
+.stat-val.highlight { color: var(--accent-cyan); }
+
+/* ─── THE GRID ─── */
+.grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin-bottom: 30px;
+}
+
+/* ─── 3D AI MEMORY CARD ─── */
+.memory-card {
+  aspect-ratio: 1; perspective: 1000px; cursor: pointer;
+}
+.card-inner {
+  width: 100%; height: 100%; position: relative;
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-style: preserve-3d;
+}
+
+.memory-card.flipped .card-inner { transform: rotateY(180deg); }
+
+.memory-card.matched { pointer-events: none; }
+.memory-card.matched .card-inner { 
+  transform: rotateY(180deg) scale(0.85); 
+  opacity: 0.15; filter: grayscale(100%);
+}
+
+.card-face {
+  position: absolute; width: 100%; height: 100%;
+  backface-visibility: hidden; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(1.5rem, 6vw, 2.2rem);
+}
+
+/* Active Pulse Animation */
+.memory-card:not(.flipped):not(.matched) .card-front {
+  animation: pulse-active 3s infinite alternate ease-in-out;
+}
+@keyframes pulse-active {
+  0% { border-color: rgba(255, 255, 255, 0.08); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+  100% { border-color: rgba(0, 240, 255, 0.3); box-shadow: inset 0 0 20px rgba(0,240,255,0.1); }
+}
+
+.card-front {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+  transition: 0.3s;
+}
+.card-front::after {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-muted); opacity: 0.5; transition: 0.3s;
+}
+.memory-card:hover:not(.flipped) .card-front {
+  background: rgba(255, 255, 255, 0.08);
+}
+.memory-card:hover:not(.flipped) .card-front::after {
+  background: var(--accent-cyan); box-shadow: 0 0 10px var(--accent-cyan); opacity: 1;
+}
+
+.card-back {
+  background: linear-gradient(135deg, rgba(0,240,255,0.15), rgba(138,43,226,0.15));
+  border: 1px solid rgba(0,240,255,0.4);
+  transform: rotateY(180deg);
+  box-shadow: inset 0 0 30px rgba(0,240,255,0.1), 0 10px 20px rgba(0,0,0,0.2);
+  text-shadow: 0 5px 15px rgba(0,0,0,0.4);
+}
+
+/* ─── SHUFFLE ANIMATIONS ─── */
+.shuffle-out { animation: dataCollapse 0.5s forwards cubic-bezier(0.5, -0.5, 0.5, 1.5); }
+@keyframes dataCollapse {
+  to { transform: scale(0) rotate(180deg); opacity: 0; }
+}
+
+.shuffle-in { animation: dataDeal 0.6s backwards cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes dataDeal {
+  from { transform: scale(0) translateY(-100px) rotate(-90deg); opacity: 0; }
+  to { transform: scale(1) translateY(0) rotate(0); opacity: 1; }
+}
+
+/* ─── PRIMARY BUTTON ─── */
+.btn-pri {
+  width: 100%; padding: 16px; border-radius: 14px; border: none;
+  background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+  color: #fff; font-family: 'Outfit', sans-serif;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+  transition: 0.3s ease; position: relative; overflow: hidden;
+  box-shadow: 0 10px 30px rgba(138,43,226,0.3);
+}
+.btn-pri:hover {
+  transform: translateY(-2px); box-shadow: 0 15px 40px rgba(0,240,255,0.4);
+}
+.btn-pri::before {
+  content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: 0.5s;
+}
+.btn-pri:hover::before { left: 100%; }
+
+/* ─── RESPONSIVE DESIGN (MOBILE) ─── */
+@media (max-width: 600px) {
+  body { padding: 15px; align-items: flex-start; }
+  .wrap { margin-top: 65px; } /* Pushes content down so top buttons don't overlap */
+  
+  .top-controls { 
+    top: 15px; right: 15px; left: 15px; 
+    justify-content: space-between; gap: 8px; 
+  }
+  .ctrl-btn { 
+    flex: 1; text-align: center; padding: 10px; 
+    font-size: 0.75rem; 
+  }
+  
+  .card-container { padding: 20px; border-radius: 18px; }
+  .grid { gap: 8px; margin-bottom: 24px; }
+  .card-face { border-radius: 10px; }
+  
+  .stats-bar { margin-bottom: 20px; padding-bottom: 15px; }
+  .btn-pri { padding: 14px; font-size: 0.9rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="ambient-mesh"></div>
+<div class="blob blob-cyan"></div>
+<div class="blob blob-purple"></div>
+
+<div class="top-controls">
+  <button class="ctrl-btn" onclick="window.location.href='index.html'">🏠 Core Menu</button>
+  <button class="ctrl-btn" id="mute-btn" onclick="toggleMute()">🔊 Audio</button>
+</div>
+
+<div class="wrap">
+  <div class="header">
+    <div class="badge-tag">Project R.I.T.I. // Module 02</div>
+    <h1>Neural<br><span>Match</span></h1>
+  </div>
+
+  <div class="card-container">
+    
+    <div class="stats-bar">
+      <div class="stat-box">
+        <span class="stat-label">Operations</span>
+        <span class="stat-val" id="moves">00</span>
+      </div>
+      <div class="stat-box" style="text-align: right;">
+        <span class="stat-label">Data Links</span>
+        <span class="stat-val highlight" id="matches">0/8</span>
+      </div>
+    </div>
+
+    <div class="grid" id="grid">
+      </div>
+
+    <button class="btn-pri" onclick="handleRestart()">Initialize Reboot Sequence</button>
+
+  </div>
+</div>
+
+<script>
+// --- AUDIO SYNTHESIZER ---
+let isMuted = false;
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function toggleMute() {
+  isMuted = !isMuted;
+  document.getElementById('mute-btn').innerHTML = isMuted ? '🔇 Muted' : '🔊 Audio';
+}
+
+function playTone(frequency, type = 'sine', duration = 0.1) {
+  if (isMuted) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  
+  osc.type = type;
+  osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+  
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+  
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function playSequence(notes) {
+  notes.forEach((note, index) => {
+    setTimeout(() => playTone(note.f, note.t, note.d), index * 150);
+  });
+}
+
+// --- GAME STATE ---
+const emojis = ['🧬', '🛰️', '🧠', '🔮', '⚡', '🌌', '👁️‍🗨️', '💎'];
+let cardsArray = [];
+let flippedCards = [];
+let matchedCount = 0;
+let movesCount = 0;
+let lockBoard = false; 
+
+const grid = document.getElementById('grid');
+const movesDisplay = document.getElementById('moves');
+const matchesDisplay = document.getElementById('matches');
+const formatNum = (num) => num.toString().padStart(2, '0');
+
+// --- RESTART ANIMATION SEQUENCE ---
+function handleRestart() {
+  if (lockBoard) return; 
+  lockBoard = true;
+  
+  const existingCards = document.querySelectorAll('.memory-card');
+
+  if (existingCards.length > 0) {
+    playTone(200, 'sawtooth', 0.3);
+    
+    existingCards.forEach(card => card.classList.remove('flipped'));
+
+    setTimeout(() => {
+      existingCards.forEach(card => card.classList.add('shuffle-out'));
+      setTimeout(buildGrid, 500); 
+    }, 400); 
+  } else {
+    buildGrid(); 
+  }
+}
+
+// --- BUILD GRID ---
+function buildGrid() {
+  grid.innerHTML = '';
+  flippedCards = [];
+  matchedCount = 0;
+  movesCount = 0;
+  
+  movesDisplay.textContent = formatNum(movesCount);
+  matchesDisplay.textContent = `${matchedCount}/8`;
+
+  cardsArray = [...emojis, ...emojis];
+  
+  // Fisher-Yates Shuffle
+  for (let i = cardsArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cardsArray[i], cardsArray[j]] = [cardsArray[j], cardsArray[i]];
+  }
+
+  cardsArray.forEach((emoji, index) => {
+    const card = document.createElement('div');
+    card.classList.add('memory-card');
+    card.style.animationDelay = `${index * 35}ms`; 
+    card.classList.add('shuffle-in');
+    
+    card.dataset.emoji = emoji;
+    card.dataset.index = index;
+
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-face card-front"></div>
+        <div class="card-face card-back">${emoji}</div>
+      </div>
+    `;
+
+    card.addEventListener('click', () => flipCard(card));
+    grid.appendChild(card);
+  });
+  
+  playSequence([{f: 300, t: 'sine', d: 0.1}, {f: 600, t: 'sine', d: 0.2}]);
+  
+  setTimeout(() => { lockBoard = false; }, 800);
+}
+
+// --- FLIP LOGIC ---
+function flipCard(card) {
+  if (lockBoard) return;
+  if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+  playTone(800, 'square', 0.03);
+
+  card.classList.add('flipped');
+  flippedCards.push(card);
+
+  if (flippedCards.length === 2) {
+    movesCount++;
+    movesDisplay.textContent = formatNum(movesCount);
+    checkForMatch();
+  }
+}
+
+// --- MATCH LOGIC ---
+function checkForMatch() {
+  let isMatch = flippedCards[0].dataset.emoji === flippedCards[1].dataset.emoji;
+
+  if (isMatch) {
+    disableCards();
+  } else {
+    unflipCards();
+  }
+}
+
+function disableCards() {
+  matchedCount++;
+  matchesDisplay.textContent = `${matchedCount}/8`;
+  
+  playSequence([{f: 600, t: 'sine', d: 0.1}, {f: 900, t: 'sine', d: 0.2}]);
+
+  flippedCards[0].classList.add('matched');
+  flippedCards[1].classList.add('matched');
+  
+  flippedCards = []; 
+
+  if (matchedCount === 8) {
+    setTimeout(() => {
+      playSequence([{f:440, t:'sine', d:0.1}, {f:554, t:'sine', d:0.1}, {f:659, t:'sine', d:0.1}, {f:880, t:'sine', d:0.6}]);
+      alert(`System Link Complete. \nOperations used: ${movesCount}`);
+    }, 600);
+  }
+}
+
+function unflipCards() {
+  lockBoard = true; 
+  playTone(150, 'sawtooth', 0.15); 
+
+  setTimeout(() => {
+    flippedCards[0].classList.remove('flipped');
+    flippedCards[1].classList.remove('flipped');
+    
+    flippedCards = [];
+    lockBoard = false; 
+  }, 1000);
+}
+
+// Start game on load
+handleRestart();
+</script>
+</body>
+</html>

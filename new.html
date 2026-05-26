@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Coming Soon | Ritika's Game Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+  /* ─── BASE RESET & THEME ─── */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-color: #0b0b1a; /* Deep dark purple-blue */
+    --text-main: #ffffff;
+    --accent-glow: #d946ef; /* Neon Pink/Purple */
+    --accent-blue: #3b82f6;
+  }
+
+  body {
+    background: radial-gradient(circle at center, #1a1a3a 0%, var(--bg-color) 100%);
+    color: var(--text-main);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* ─── FLOATING HOME BUTTON ─── */
+  .floating-nav {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a1a1aa;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 30px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+  .floating-nav:hover {
+    border-color: var(--accent-glow);
+    color: #fff;
+    background: rgba(217, 70, 239, 0.1);
+    transform: translateY(-2px);
+  }
+
+  /* ─── MAIN CONTENT CONTAINER ─── */
+  .container {
+    text-align: center;
+    z-index: 10;
+    /* Entrance Animation */
+    animation: fadeInUp 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  @keyframes fadeInUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── TYPOGRAPHY ─── */
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 400;
+    letter-spacing: 0.4em;
+    margin-bottom: 60px;
+    margin-left: 0.4em; /* Offsets the visual imbalance of letter-spacing */
+    text-shadow: 0 0 20px rgba(255,255,255,0.2);
+  }
+
+  /* ─── THE GLOWING ORB ─── */
+  .orb-container {
+    position: relative;
+    width: 250px;
+    height: 250px;
+    margin: 0 auto 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: float 6s ease-in-out infinite;
+  }
+
+  /* Up and down floating animation */
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+
+  /* The Bright Pink Halo Behind */
+  .orb-halo {
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    background: var(--accent-glow);
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.6;
+    animation: pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+  }
+
+  /* The 3D Sphere Core */
+  .orb-core {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    /* Creates a 3D spherical look using gradients */
+    background: radial-gradient(circle at 30% 30%, #4f46e5, #1e1b4b);
+    box-shadow: 
+      inset -20px -20px 40px rgba(0,0,0,0.8),
+      inset 10px 10px 30px rgba(255,255,255,0.2),
+      0 10px 30px rgba(0,0,0,0.5);
+    z-index: 2;
+    overflow: hidden;
+  }
+
+  /* Low-poly simulated texture (Optional CSS overlay) */
+  .orb-core::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: 
+      linear-gradient(30deg, rgba(255,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(-30deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+  }
+
+  /* ─── NOTIFICATION FORM ─── */
+  .notify-wrapper {
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  .notify-label {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    color: #a1a1aa;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+  }
+
+  .form-group {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  /* Input styling (Bottom border only) */
+  .email-input {
+    flex: 1;
+    min-width: 200px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    padding: 10px 0;
+    outline: none;
+    transition: border-color 0.3s ease;
+  }
+  .email-input::placeholder {
+    color: #52525b;
+  }
+  .email-input:focus {
+    border-bottom-color: var(--accent-glow);
+  }
+
+  /* Submit Button */
+  .submit-btn {
+    background: transparent;
+    border: 1px solid var(--accent-glow);
+    color: #fff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    padding: 12px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(217, 70, 239, 0.2);
+  }
+
+  .submit-btn:hover {
+    background: var(--accent-glow);
+    box-shadow: 0 0 20px rgba(217, 70, 239, 0.5);
+    transform: translateY(-2px);
+  }
+
+  /* Success Message */
+  .success-msg {
+    display: none;
+    color: #4ade80;
+    font-size: 0.9rem;
+    margin-top: 15px;
+    animation: fadeInUp 0.5s ease forwards;
+  }
+
+  /* ─── RESPONSIVE DESIGN ─── */
+  @media (max-width: 600px) {
+    .form-group { flex-direction: column; align-items: stretch; gap: 30px; }
+    .submit-btn { width: 100%; text-align: center; }
+    .orb-container { width: 200px; height: 200px; margin-bottom: 50px; }
+    .orb-core { width: 140px; height: 140px; }
+    .orb-halo { width: 170px; height: 170px; }
+  }
+</style>
+</head>
+<body>
+
+  <a href="index.html" class="floating-nav">🏠 Home</a>
+
+  <div class="container">
+    
+    <h1>COMING SOON</h1>
+
+    <div class="orb-container">
+      <div class="orb-halo"></div>
+      <div class="orb-core"></div>
+    </div>
+
+    <div class="notify-wrapper">
+      <span class="notify-label">Get Notified</span>
+      <form id="notify-form" class="form-group">
+        <input type="email" class="email-input" placeholder="Enter your Email" required />
+        <button type="submit" class="submit-btn">Submit Email</button>
+      </form>
+      <div id="success-msg" class="success-msg">Systems primed. We will notify you upon launch.</div>
+    </div>
+
+  </div>
+
+  <script>
+    // Handle form submission to show a sleek success message
+    document.getElementById('notify-form').addEventListener('submit', function(e) {
+      e.preventDefault(); // Prevents page from reloading
+      
+      const input = document.querySelector('.email-input');
+      const btn = document.querySelector('.submit-btn');
+      const msg = document.getElementById('success-msg');
+
+      if(input.value) {
+        // Change UI to success state
+        btn.innerHTML = '✓ RECEIVED';
+        btn.style.borderColor = '#4ade80';
+        btn.style.color = '#4ade80';
+        btn.style.boxShadow = '0 0 15px rgba(74, 222, 128, 0.3)';
+        
+        input.disabled = true;
+        input.style.opacity = '0.5';
+
+        msg.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
